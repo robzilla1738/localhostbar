@@ -7,9 +7,18 @@ APP_NAME="LocalhostBar"
 VERSION="$(tr -d '[:space:]' < "$ROOT_DIR/VERSION")"
 BUNDLE_ID="com.robzilla1738.localhostbar"
 APP_DIR="$ROOT_DIR/.build/$APP_NAME.app"
-# Prefer Xcode-beta when present so XCTest/SPM binary frameworks resolve consistently.
-if [[ -z "${DEVELOPER_DIR:-}" && -d "/Users/robert/Downloads/Xcode-beta.app/Contents/Developer" ]]; then
-  export DEVELOPER_DIR="/Users/robert/Downloads/Xcode-beta.app/Contents/Developer"
+# Prefer a full Xcode app when DEVELOPER_DIR is unset (CLT lacks XCTest / some SPM bits).
+if [[ -z "${DEVELOPER_DIR:-}" ]]; then
+  for candidate in \
+    "/Applications/Xcode.app/Contents/Developer" \
+    "/Applications/Xcode-beta.app/Contents/Developer" \
+    "$HOME/Downloads/Xcode-beta.app/Contents/Developer" \
+    "$HOME/Downloads/Xcode.app/Contents/Developer"; do
+    if [[ -d "$candidate" ]]; then
+      export DEVELOPER_DIR="$candidate"
+      break
+    fi
+  done
 fi
 EXECUTABLE_PATH="$ROOT_DIR/.build/$CONFIGURATION/$APP_NAME"
 RESOURCES_DIR="$ROOT_DIR/Resources"

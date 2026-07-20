@@ -14,8 +14,17 @@ DO_PUBLISH=0
 export SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Robert Courson (9F2JXY8TCK)}"
 export NOTARY_PROFILE="${NOTARY_PROFILE:-AC_PASSWORD}"
 
-if [[ -z "${DEVELOPER_DIR:-}" && -d "/Users/robert/Downloads/Xcode-beta.app/Contents/Developer" ]]; then
-  export DEVELOPER_DIR="/Users/robert/Downloads/Xcode-beta.app/Contents/Developer"
+if [[ -z "${DEVELOPER_DIR:-}" ]]; then
+  for candidate in \
+    "/Applications/Xcode.app/Contents/Developer" \
+    "/Applications/Xcode-beta.app/Contents/Developer" \
+    "$HOME/Downloads/Xcode-beta.app/Contents/Developer" \
+    "$HOME/Downloads/Xcode.app/Contents/Developer"; do
+    if [[ -d "$candidate" ]]; then
+      export DEVELOPER_DIR="$candidate"
+      break
+    fi
+  done
 fi
 
 # Prefer Sparkle tools from common locations (download tools if missing)
