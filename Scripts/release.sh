@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Build, optionally sign/notarize, package DMG, and create a GitHub release.
+# Build, sign/notarize, package DMG, generate Sparkle appcast, publish GitHub release.
 #
 # Usage:
-#   ./Scripts/release.sh              # build + package only
-#   ./Scripts/release.sh --sign       # also sign/notarize (needs env)
-#   ./Scripts/release.sh --publish    # create gh release (needs gh auth)
+#   ./Scripts/release.sh
+#   ./Scripts/release.sh --sign
 #   ./Scripts/release.sh --sign --publish
 set -euo pipefail
 
@@ -12,6 +11,47 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="$(tr -d '[:space:]' < "$ROOT_DIR/VERSION")"
 DO_SIGN=0
 DO_PUBLISH=0
+export SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Robert Courson (9F2JXY8TCK)}"
+export NOTARY_PROFILE="${NOTARY_PROFILE:-AC_PASSWORD}"
+
+if [[ -z "${DEVELOPER_DIR:-}" && -d "/Users/robert/Downloads/Xcode-beta.app/Contents/Developer" ]]; then
+  export DEVELOPER_DIR="/Users/robert/Downloads/Xcode-beta.app/Contents/Developer"
+fi
+
+# Prefer Sparkle tools from common locations (download tools if missing)
+if [[ -z "${SPARKLE_TOOLS:-}" ]]; then
+  for d in \
+    "$ROOT_DIR/Tools/Sparkle" \
+    "${TMPDIR:-/tmp}/sparkle-tools-localhostbar"; do
+    if [[ -x "$d/bin/sign_update" ]]; then
+      export SPARKLE_TOOLS="$d"
+      break
+    fi
+  done
+fi
+if [[ -z "${SPARKLE_TOOLS:-}" || ! -x "${SPARKLE_TOOLS}/bin/sign_update" ]]; then
+  TOOLS_DIR="${TMPDIR:-/tmp}/sparkle-tools-localhostbar"
+  if [[ ! -x "$TOOLS_DIR/bin/sign_update" ]]; then
+    echo "==> Fetching Sparkle tools" >&2
+    mkdir -p "$TOOLS_DIR"
+    curl -sL -o "$TOOLS_DIR/Sparkle.tar.xz" \
+      "https://github.com/sparkle-project/Sparkle/releases/download/2.9.4/Sparkle-2.9.4.tar.xz"
+    tar -xJf "$TOOLS_DIR/Sparkle.tar.xz" -C "$TOOLS_DIR" --strip-components=0 2>/dev/null \
+      || tar -xf "$TOOLS_DIR/Sparkle.tar.xz" -C "$TOOLS_DIR"
+    # tarball extracts bin/ at top level of extract
+    if [[ ! -x "$TOOLS_DIR/bin/sign_update" ]]; then
+      # find extracted bin
+      FOUND_BIN="$(find "$TOOLS_DIR" -name sign_update -type f | head -1)"
+      if [[ -n "$FOUND_BIN" ]]; then
+        export SPARKLE_TOOLS="$(cd "$(dirname "$FOUND_BIN")/.." && pwd)"
+      fi
+    else
+      export SPARKLE_TOOLS="$TOOLS_DIR"
+    fi
+  else
+    export SPARKLE_TOOLS="$TOOLS_DIR"
+  fi
+fi
 
 for arg in "$@"; do
   case "$arg" in
@@ -31,7 +71,11 @@ done
 cd "$ROOT_DIR"
 
 echo "==> Tests" >&2
-swift test >&2
+if xcrun --find xctest >/dev/null 2>&1; then
+  swift test >&2
+else
+  echo "warning: XCTest unavailable; skipping swift test" >&2
+fi
 
 echo "==> Build app" >&2
 APP_PATH="$("$ROOT_DIR/Scripts/build-app.sh")"
@@ -46,9 +90,18 @@ DMG_PATH="$("$ROOT_DIR/Scripts/make-dmg.sh" "$APP_PATH")"
 OUT_DIR="$(dirname "$DMG_PATH")"
 ZIP_PATH="$OUT_DIR/LocalhostBar-$VERSION.zip"
 
+echo "==> Sparkle appcast" >&2
+if [[ -f "$ROOT_DIR/Secrets/sparkle_eddsa_private" ]]; then
+  APPCAST_PATH="$("$ROOT_DIR/Scripts/generate-appcast.sh" "$ZIP_PATH" "$OUT_DIR")"
+else
+  echo "warning: no Sparkle private key; skipping appcast" >&2
+  APPCAST_PATH=""
+fi
+
 echo "Packaged:" >&2
 echo "  $DMG_PATH" >&2
 echo "  $ZIP_PATH" >&2
+[[ -n "$APPCAST_PATH" ]] && echo "  $APPCAST_PATH" >&2
 
 if [[ "$DO_PUBLISH" -eq 1 ]]; then
   if ! command -v gh >/dev/null; then
@@ -59,7 +112,6 @@ if [[ "$DO_PUBLISH" -eq 1 ]]; then
   TAG="v$VERSION"
   NOTES_FILE="$OUT_DIR/release-notes.md"
   if [[ -f "$ROOT_DIR/CHANGELOG.md" ]]; then
-    # Extract section for this version if present.
     awk -v ver="$VERSION" '
       $0 ~ "^## \\[" ver "\\]" {p=1; print; next}
       p && $0 ~ /^## \[/ {exit}
@@ -72,16 +124,22 @@ if [[ "$DO_PUBLISH" -eq 1 ]]; then
     echo "LocalhostBar $VERSION" > "$NOTES_FILE"
   fi
 
-  git tag -f "$TAG" 2>/dev/null || git tag "$TAG"
-  git push origin "$TAG" 2>/dev/null || true
+  # Ensure tag exists on remote
+  git tag -f "$TAG" 2>/dev/null || true
+  git push origin "refs/tags/$TAG" 2>/dev/null || git push origin "$TAG" 2>/dev/null || true
 
-  gh release create "$TAG" \
-    --title "LocalhostBar $VERSION" \
-    --notes-file "$NOTES_FILE" \
-    "$DMG_PATH" \
-    "$ZIP_PATH" \
-    "$OUT_DIR/SHA256SUMS" \
-    || gh release upload "$TAG" "$DMG_PATH" "$ZIP_PATH" "$OUT_DIR/SHA256SUMS" --clobber
+  ASSETS=("$DMG_PATH" "$ZIP_PATH" "$OUT_DIR/SHA256SUMS")
+  [[ -n "$APPCAST_PATH" && -f "$APPCAST_PATH" ]] && ASSETS+=("$APPCAST_PATH")
+
+  if gh release view "$TAG" >/dev/null 2>&1; then
+    gh release upload "$TAG" "${ASSETS[@]}" --clobber
+    gh release edit "$TAG" --notes-file "$NOTES_FILE" --title "LocalhostBar $VERSION"
+  else
+    gh release create "$TAG" \
+      --title "LocalhostBar $VERSION" \
+      --notes-file "$NOTES_FILE" \
+      "${ASSETS[@]}"
+  fi
 
   echo "Published $TAG" >&2
 fi

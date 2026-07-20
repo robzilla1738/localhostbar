@@ -2,17 +2,17 @@
 
 ## What LocalhostBar does
 
-LocalhostBar is a **local-only** macOS menu bar utility. It:
+LocalhostBar is a **mostly local** macOS menu bar utility. It:
 
 - Lists TCP listeners reachable on localhost (via `lsof`)
 - Reads process command lines and working directories (via `ps` / `lsof`)
-- Optionally probes `http(s)://localhost:<port>` to detect openable web UIs
+- Probes `http(s)://localhost:<port>` to detect openable web UIs and titles
 - Can send `SIGTERM` to **user-owned, non-protected** processes you choose to stop
+- Optionally checks GitHub Releases for updates via **Sparkle** (appcast + signed archive)
 
 ## What it does **not** do
 
-- No analytics, crash reporting, or telemetry
-- No network requests except to `localhost` / loopback during HTTP probes
+- No analytics, crash reporting, or product telemetry
 - No upload of process lists or paths
 - No privilege escalation; it cannot stop processes you do not own
 - No injection into other apps
@@ -21,9 +21,17 @@ LocalhostBar is a **local-only** macOS menu bar utility. It:
 
 System and app-managed services (AirPlay, Continuity, Docker backend, Adobe helpers, etc.) appear with a lock and **cannot** be stopped from the UI.
 
+## Updates
+
+Update packages are signed with Sparkle EdDSA. Only the public key is embedded in the app. The private key must remain offline / in maintainer secrets and must never appear in the git repository.
+
 ## Reporting a vulnerability
 
-If you find a security issue, please open a private security advisory on GitHub or email the maintainer via the contact listed on the repository. Please do not open a public issue for exploitable bugs until a fix is available.
+If you find a security issue, please open a private security advisory on GitHub:
+
+https://github.com/robzilla1738/localhostbar/security/advisories/new
+
+Please do not open a public issue for exploitable bugs until a fix is available.
 
 ## Supported versions
 

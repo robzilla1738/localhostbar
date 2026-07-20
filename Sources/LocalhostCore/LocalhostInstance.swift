@@ -116,7 +116,7 @@ public struct LocalhostInstance: Identifiable, Equatable, Sendable {
     }
 
     public var isHiddenByDefault: Bool {
-        category == .system || (httpProbe == nil && !isLikelyDevelopmentProcess)
+        category == .system || (httpProbe == nil && !isLikelyDevelopmentProcess && usefulProjectName == nil)
     }
 
     public var isOpenable: Bool {

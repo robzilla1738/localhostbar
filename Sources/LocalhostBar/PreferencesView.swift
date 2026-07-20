@@ -4,6 +4,7 @@ import SwiftUI
 struct PreferencesView: View {
     @ObservedObject var model: LocalhostModel
     @ObservedObject var preferences: LocalhostPreferences
+    @ObservedObject var updates: UpdateController
 
     @State private var launchAtLogin = false
     @State private var launchAtLoginError: String?
@@ -44,8 +45,22 @@ struct PreferencesView: View {
             }
 
             Section {
+                Button("Check for Updates…") {
+                    updates.checkForUpdates()
+                }
+                .disabled(!updates.canCheckForUpdates)
+
+                Text("Updates are signed with Sparkle and downloaded from GitHub Releases.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Updates")
+            }
+
+            Section {
                 LabeledContent("Version", value: AppMetadata.version)
                 Link("GitHub", destination: AppMetadata.githubURL)
+                Link("Releases", destination: AppMetadata.releasesURL)
                 Text(AppMetadata.copyright)
                     .font(.caption)
                     .foregroundStyle(.secondary)

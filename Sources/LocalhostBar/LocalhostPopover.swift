@@ -5,6 +5,7 @@ import SwiftUI
 struct LocalhostPopover: View {
     @ObservedObject var model: LocalhostModel
     @ObservedObject var preferences: LocalhostPreferences
+    @ObservedObject var updates: UpdateController
 
     var body: some View {
         VStack(spacing: 0) {
@@ -96,6 +97,12 @@ struct LocalhostPopover: View {
             }
             .buttonStyle(.borderless)
             .help("Preferences")
+            .contextMenu {
+                Button("Check for Updates…") {
+                    updates.checkForUpdates()
+                }
+                .disabled(!updates.canCheckForUpdates)
+            }
 
             Button {
                 model.quit()

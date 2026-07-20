@@ -6,10 +6,15 @@ struct LocalhostBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var model = LocalhostModel()
     @StateObject private var preferences = LocalhostPreferences.shared
+    @StateObject private var updates = UpdateController.shared
 
     var body: some Scene {
         MenuBarExtra {
-            LocalhostPopover(model: model, preferences: preferences)
+            LocalhostPopover(
+                model: model,
+                preferences: preferences,
+                updates: updates
+            )
         } label: {
             Image(systemName: model.menuIcon)
                 .help(model.menuTooltip)
@@ -18,8 +23,12 @@ struct LocalhostBarApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            PreferencesView(model: model, preferences: preferences)
-                .frame(width: 360, height: 280)
+            PreferencesView(
+                model: model,
+                preferences: preferences,
+                updates: updates
+            )
+            .frame(width: 380, height: 320)
         }
     }
 }
@@ -27,5 +36,7 @@ struct LocalhostBarApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
+        // Touch updater so Sparkle schedules automatic checks after launch.
+        _ = UpdateController.shared
     }
 }

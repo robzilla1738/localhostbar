@@ -11,3 +11,13 @@ DerivedData/
 
 # Intermediate icon sources (keep AppIcon.icns)
 Resources/AppIcon.iconset/
+
+# Sparkle private key — never commit
+Secrets/
+*.eddsa
+sparkle_eddsa_private
+Tools/Sparkle/
+
+# Local env
+.env
+.env.*

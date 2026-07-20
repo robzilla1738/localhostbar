@@ -28,6 +28,12 @@ jobs:
       - name: Build app bundle
         run: ./Scripts/build-app.sh
 
+      - name: Assert Sparkle embedded
+        run: |
+          test -d .build/LocalhostBar.app/Contents/Frameworks/Sparkle.framework
+          plutil -p .build/LocalhostBar.app/Contents/Info.plist | grep -q SUFeedURL
+          plutil -p .build/LocalhostBar.app/Contents/Info.plist | grep -q SUPublicEDKey
+
       - name: Upload unsigned app (artifact)
         uses: actions/upload-artifact@v4
         with:

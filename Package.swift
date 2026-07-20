@@ -11,6 +11,9 @@ let package = Package(
         .library(name: "LocalhostCore", targets: ["LocalhostCore"]),
         .executable(name: "LocalhostBar", targets: ["LocalhostBar"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")
+    ],
     targets: [
         .target(
             name: "LocalhostCore",
@@ -18,7 +21,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "LocalhostBar",
-            dependencies: ["LocalhostCore"],
+            dependencies: [
+                "LocalhostCore",
+                .product(name: "Sparkle", package: "Sparkle")
+            ],
             path: "Sources/LocalhostBar"
         ),
         .testTarget(

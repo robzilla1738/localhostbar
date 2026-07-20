@@ -153,14 +153,6 @@ public struct LocalhostHTTPProbe: Sendable {
     }
 }
 
-public enum AppMetadata {
-    public static let version = "0.1.0"
-    public static let bundleIdentifier = "com.robzilla1738.localhostbar"
-    public static let productName = "LocalhostBar"
-    public static let githubURL = URL(string: "https://github.com/robzilla1738/localhostbar")!
-    public static let copyright = "Copyright © 2026"
-}
-
 private extension LocalhostCategory {
     var sortOrder: Int {
         switch self {
