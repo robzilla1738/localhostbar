@@ -1,0 +1,13 @@
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserdata/
+.DS_Store
+*.swp
+*~
+
+# Local release outputs
+.build/dist/
+
+# Intermediate icon sources (keep AppIcon.icns)
+Resources/AppIcon.iconset/

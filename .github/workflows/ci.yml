@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Test & package
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Test
+        run: swift test
+
+      - name: Generate icon
+        run: ./Scripts/generate-icon.sh
+
+      - name: Build app bundle
+        run: ./Scripts/build-app.sh
+
+      - name: Upload unsigned app (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LocalhostBar-unsigned
+          path: .build/LocalhostBar.app
+          if-no-files-found: error
