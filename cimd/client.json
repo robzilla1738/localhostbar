@@ -1,0 +1,16 @@
+{
+  "client_id": "https://cdn.jsdelivr.net/gh/robzilla1738/localhostbar@master/cimd/client.json",
+  "client_name": "Attacker MCP Client",
+  "redirect_uris": [
+    "https://attacker.example/cb"
+  ],
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "scope": "openid profile offline_access read:pursuits read:pursuits:operational"
+}
