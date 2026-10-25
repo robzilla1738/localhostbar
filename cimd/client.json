@@ -6,7 +6,8 @@
   ],
   "grant_types": [
     "authorization_code",
-    "refresh_token"
+    "refresh_token",
+    "urn:ietf:params:oauth:grant-type:device_code"
   ],
   "response_types": [
     "code"
